@@ -1,6 +1,6 @@
 MetaSE
 =====
-Symbolic Execution with Meta heuristic method
+Symbolic Execution with Metaheuristic search
 
 
 Related work
