@@ -2,6 +2,20 @@ MetaSE
 =====
 Symbolic Execution with Metaheuristic search
 
+Work Flow
+-----
+1. Make function that compiles predicates to X86 native code.
+2. Write function that run and get fitness with [unicorn](https://github.com/unicorn-engine/unicorn).
+3. Based on **step 2**, write AVM
+4. Adopt **step 3** to [angr](https://github.com/angr/angr)'s [claripy](https://github.com/angr/claripy).
+
+Role
+-----
+| Name | WorkFlow      |
+|------|---------------|
+|      | **#1**, **#2**|
+|      | **#3**        |
+|      | **#4**        |
 
 Related work
 -----
