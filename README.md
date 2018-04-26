@@ -11,11 +11,11 @@ Work Flow
 
 Role
 -----
-| Name | WorkFlow       |
-|------|----------------|
-|      | **#1**         |
-|      | **#2**, **#3** |
-|      | **#4**         |
+| Name          | WorkFlow       |
+|---------------|----------------|
+| Hyeonwoo Kang | **#1**         |
+| Bilgehan      | **#2**, **#3** |
+| Minkyu Jung   | **#4**         |
 
 Related work
 -----
