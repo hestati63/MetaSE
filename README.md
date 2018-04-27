@@ -13,7 +13,7 @@ Role
 -----
 | Name          | WorkFlow       |
 |---------------|----------------|
-| Hyeonwoo Kang | **#1**         |
+| Hyeonwoo Kang | **#1**, **#2** |
 | Bilgehan      | **#2**, **#3** |
 | Minkyu Jung   | **#4**         |
 
