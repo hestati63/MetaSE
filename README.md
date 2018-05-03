@@ -2,6 +2,14 @@ MetaSE
 =====
 Symbolic Execution with Metaheuristic search
 
+How to Run
+-----
+```bash
+$ . hook
+$ python code.py
+```
+
+
 Work Flow
 -----
 1. Make function that compiles predicates to X86 native code.
