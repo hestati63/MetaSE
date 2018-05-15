@@ -12,6 +12,7 @@ from decimal import Decimal
 
 from ..utils.transition import raise_from
 from ..errors import ClaripyZ3Error
+import z3_hook
 
 l = logging.getLogger("claripy.backends.backend_z3")
 
@@ -46,7 +47,6 @@ def _add_memory_pressure(p):
 solve_count = 0
 
 supports_fp = hasattr(z3, 'fpEQ')
-
 #
 # Utility functions
 #
@@ -518,7 +518,7 @@ class BackendZ3(Backend):
             raise BackendError("Called _abstract_fp_val with unknown type")
 
     def solver(self, timeout=None):
-        s = z3.Solver(ctx=self._context)
+        s = z3_hook.Solver(ctx=self._context)
         if timeout is not None:
             if 'soft_timeout' in str(s.param_descrs()):
                 s.set('soft_timeout', timeout)
