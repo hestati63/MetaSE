@@ -518,7 +518,7 @@ class BackendZ3(Backend):
             raise BackendError("Called _abstract_fp_val with unknown type")
 
     def solver(self, timeout=None):
-        s = z3_hook.Solver(ctx=self._context)
+        s = z3_hook.Solver(ctx=self._context, backendobj=self)
         if timeout is not None:
             if 'soft_timeout' in str(s.param_descrs()):
                 s.set('soft_timeout', timeout)
