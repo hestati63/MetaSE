@@ -1,5 +1,5 @@
 import z3
-from .ast import compileAST
+from .ast import Compiler
 
 
 def isFP(ast):
@@ -16,6 +16,7 @@ class Solver(z3.Solver):
         self.fpKind = False           # Whether this solver hold fp
         self.backendobj = backendobj  # backend object to call _abstract
         self.push_rec = []            # push record
+        self.compiler = Compiler()
 
     def push(self):
         z3.Solver.push(self)
@@ -44,7 +45,8 @@ class Solver(z3.Solver):
 
 
     def __search(self):
-        codes = [compileAST(self.backendobj.simplify(self.backendobj._abstract(expr)))
+        codes = [self.compiler.compile(
+                    self.backendobj.simplify(self.backendobj._abstract(expr)))
                  for expr in self.assertions()]
         raise Exception("todo: search")
 
