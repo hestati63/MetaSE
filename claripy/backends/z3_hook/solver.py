@@ -27,12 +27,24 @@ class Solver(z3.Solver):
 
     def check(self):
         if self.fpKind:
-            return self.__search()
+            self.answer = self.__search()
+            return z3.sat if self.answer else z3.unsat
         else:
             return z3.Solver.check(self)
 
+    def model(self):
+        if self.fpKind:
+            s = z3.Solver()
+            for key, value in self.answer:
+                s.add(z3.BitVec(key.name, key.size) == value)
+            assert (s.check() == z3.sat)
+            return s.model()
+        else:
+            return z3.Solver.model(self)
+
+
     def __search(self):
-        codes = [compileAST(self.backendobj._abstract(expr))
+        codes = [compileAST(self.backendobj.simplify(self.backendobj._abstract(expr)))
                  for expr in self.assertions()]
         raise Exception("todo: search")
 
