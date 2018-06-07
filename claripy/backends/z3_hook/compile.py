@@ -94,7 +94,8 @@ def get_f(op):
 class CompileService(object):
     boundId = set()
     defs = ''
-    code_template = '''{type} fitness_{id}(void **args) {{
+    code_template = '''{type} fitness_{id}(void **args)
+    {{
         {unpack}
         {defs}
         return {code};
@@ -112,8 +113,7 @@ class CompileService(object):
         return ID
 
     def compile(self):
-        op, fv, code = self.handle_Top_Bool(self.ast)
-        return op, fv, code
+        return self.handle_Top_Bool(self.ast)
 
     def handle_Top_Bool(self, ast, negate=False):
         if ast.op == 'Not':

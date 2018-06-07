@@ -42,7 +42,7 @@ class Executor():
     def cdef(self, fundef):
         self.ffi.cdef(fundef)
 
-    def new(self, t, val):
+    def new(self, t, val=None):
         return self.ffi.new(t, val)
 
     def sym(self, fun):
@@ -54,8 +54,10 @@ class Executor():
 
 def createLibrary(codes):
     f = tempfile.NamedTemporaryFile(mode="wb", delete=False, suffix=".c")
-    f.write('''#include <stdint.h>
-#define abs(x) (x) > 0 ? (x) : -(x)
+    f.write(r'''#include <stdint.h>
+#define abs(x) ((x) > 0 ? (x) : -(x))
+#define extract(value, start, length) \
+    (((value) >> (start)) & (~0ULL >> (sizeof(value) * 8) - (length)))
 ''')
     for _, _, code, _ in codes:
         f.write(code + '\n')
@@ -72,6 +74,11 @@ def createLibrary(codes):
 def doAVM(codes):
     library = createLibrary(codes)
     executor = Executor(library)
-    
-    os.unlink(library + '.so')
+
+    for _, _, code, uuid in codes:
+        executor.cdef(code.split('\n')[0] + ';')
+        fitness = executor.sym('fitness_' + uuid)
+        print fitness
+
+    os.unlink(library)
     raise Exception("todo: search")
