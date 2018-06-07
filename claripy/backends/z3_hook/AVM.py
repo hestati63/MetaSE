@@ -4,43 +4,41 @@ import os
 import tempfile
 import subprocess
 
+ffi = FFI()
+
 
 class Executor():
     def __init__(self, dll):
-        self.ffi = FFI()
         self.dl_name = dll
-        self.dll = self.ffi.dlopen(dll)
+        self.dll = ffi.dlopen(dll)
 
     def __str__(self):
         return '<Executor: %s>' % self.dl_name
 
+    def cdef(self, fundef):
+        ffi.cdef(fundef)
+
     def float(self, val):
-        pass
+        return ffi.cast('float', val)
 
     def double(self, val):
-        pass
+        return ffi.cast('double', val)
 
     def char(self, val):
-        pass
+        return ffi.cast('char', val)
 
     def short(self, val):
-        pass
+        return ffi.cast('short', val)
 
     def int(self, val):
-        pass
+        return ffi.cast('int', val)
 
     def longlong(self, val):
-        pass
+        return ffi.cast('long', val)
 
     def run(self, _id, *args):
+        #TODO
         fun = getattr(self.dll, 'fitness_{}'.format(_id))
-        pass
-
-    def cdef(self, fundef):
-        self.ffi.cdef(fundef)
-
-    def new(self, t, val=None):
-        return self.ffi.new(t, val)
 
 
 def createLibrary(codes):

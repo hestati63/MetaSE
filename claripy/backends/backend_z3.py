@@ -47,6 +47,7 @@ def _add_memory_pressure(p):
 solve_count = 0
 
 supports_fp = hasattr(z3, 'fpEQ')
+
 #
 # Utility functions
 #

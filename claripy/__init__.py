@@ -30,7 +30,7 @@ if os.environ.get('REMOTE', False):
 
 _recurse = 15000
 l.info("Claripy is setting the recursion limit to %d. If Python segfaults, I am sorry.", _recurse)
-l.critical("This is modified version of claripy used in metaSE")
+l.warn("This is modified version of claripy used in metaSE")
 sys.setrecursionlimit(_recurse)
 
 #
