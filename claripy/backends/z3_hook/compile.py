@@ -1,9 +1,8 @@
 import random
 import string
-from ...ast.base import Base
-from ...ast.bv import BV, BVV
-from ...ast.bool import BoolV, Bool
-from ...ast.fp import FP, FPV
+from ...ast.bv import BV
+from ...ast.bool import Bool
+from ...ast.fp import FP
 
 
 fvPool = string.uppercase + string.lowercase
@@ -76,7 +75,7 @@ def normalize_op(op, negate=False):
 
 
 def get_f(op):
-    if op =='eq':
+    if op == 'eq':
         return 'abs(({b}) - ({a}))'
     elif op == 'neq':
         return '-abs(({b}) - ({a}))'
@@ -117,7 +116,7 @@ class CompileService(object):
         return op, fv, code
 
     def handle_Top_Bool(self, ast, negate=False):
-        if ast.op =='Not':
+        if ast.op == 'Not':
             return self.handle_Top_Bool(ast.args[0], negate=not negate)
         elif ast.op in relops:
             op = normalize_op(ast.op, negate=negate)
@@ -140,7 +139,7 @@ class CompileService(object):
                                                  id=ast.ana_uuid,
                                                  unpack=unpack,
                                                  defs=precond,
-                                                 code=fitness)
+                                                 code=fitness), ast.ana_uuid
 
     def _compile(self, ast):
         func = getattr(self, 'handle_{}'.format(ast.__class__.__name__))
@@ -176,7 +175,7 @@ class CompileService(object):
         elif ast.op == 'FPV':
             _id = self.getFreeId()
             precond = '{type} {id} = {val};\n'.format(type=sort2type(ast.sort),
-                                                     id=_id, val=ast.args[0])
+                                                      id=_id, val=ast.args[0])
             return set(), precond, _id
 
         else:
@@ -239,9 +238,8 @@ class CompileService(object):
             exit(0)
 
     def handle_Bool(self, ast, negate=False):
-        if ast.op =='Not':
+        if ast.op == 'Not':
             return self.handle_Bool(ast.args[0], negate=not negate)
-
 
 
 class Compiler(object):
@@ -267,4 +265,3 @@ class Compiler(object):
         else:
             print op
             exit(0)
-
