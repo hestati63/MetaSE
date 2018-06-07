@@ -227,7 +227,7 @@ class CompileService(object):
             st, ed, expr = ast.args
             fv, pr, expr = self._compile(expr)
             code = 'extract({exp}, {st}, {ed})'.format(exp=expr, st=st, ed=ed)
-            return fv, pr, expr
+            return fv, pr, code
         elif ast.op == 'BVS':
             size = ast.size()
             name = ast.args[0]
