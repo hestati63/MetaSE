@@ -78,7 +78,10 @@ def doAVM(codes):
     executor = Executor(library)
 
     allfv = set()
-    for _, fv, code, _ in codes:
+    funcs = []
+    for idx, (op, fv, code, uuid) in enumerate(codes):
+        branch_distance = len(codes) - idx - 1
+        funcs.append((uuid, op, branch_distance))
         executor.cdef(code.split('\n')[0] + ';')
         allfv |= fv
 
@@ -87,12 +90,13 @@ def doAVM(codes):
     # initialize all argument to zero
     args_value = {name: func(0) for name, func in args.items()}
 
-    # @op: comparison operator
-    # @fv: list of argument's (size, name)
-    for idx, (op, fv, _, uuid) in enumerate(codes):
-        branch_distance = len(codes) - idx - 1
-        fitness = executor.run(uuid, )
-        # TODO: Do AVM
+    # TODO: Write AVM codes
+    # XXX: now play with args_value and funcs and do AVM
+    # XXX: funcs consist of three values: uuid, op, branch_distance
+    # XXX: op is comparison operator
+    # XXX: you can get fitness of function by calling
+    # XXX: executor.run(uuid, args)
+    # XXX: this function should return dictionary: name: value
 
     os.unlink(library)
     raise Exception("todo: search")
