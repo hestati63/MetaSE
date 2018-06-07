@@ -126,7 +126,7 @@ class CompileService(object):
             fv2, pr2, code2 = self._compile(args[1])
             fv = fv1 | fv2
             precond = pr1 + pr2
-            unpack = '\n'.join('{tp} {name} = ({tp}) arg[{idx}];'.
+            unpack = '\n'.join('{tp} {name} = ({tp}) args[{idx}];'.
                                format(name=n, tp=size2type(sz), idx=idx)
                                for idx, (sz, n) in enumerate(fv))
         else:
@@ -251,12 +251,10 @@ class Compiler(object):
         stmts = self.__try_divide(ast)
         stmts = stmts if isinstance(stmts, list) else [stmts]
         for stmt in stmts:
-            a, b, c = CompileService(stmt).compile()
-            print '====Compiled===='
-            print 'Op: %s, FV: %s' % (a, b)
-            print '==== Code ===='
-            print c
-        exit(0)
+            _hash = stmt._hash
+            r = self.cache.get(_hash, False) or CompileService(stmt).compile()
+            self.cache[_hash] = r
+            yield r
 
     def __try_divide(self, ast):
         assert isinstance(ast, Bool)

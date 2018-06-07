@@ -1,4 +1,5 @@
 import z3
+import AVM
 from .compile import Compiler
 
 
@@ -43,12 +44,12 @@ class Solver(z3.Solver):
         else:
             return z3.Solver.model(self)
 
-
     def __search(self):
-        codes = [self.compiler.compile(
-                    self.backendobj.simplify(self.backendobj._abstract(expr)))
-                 for expr in self.assertions()]
-        raise Exception("todo: search")
+        codes = []
+        for expr in self.assertions():
+            codes.extend(list(self.compiler.compile(
+                self.backendobj.simplify(self.backendobj._abstract(expr)))))
+        return AVM.doAVM(codes)
 
     def add(self, *x):
         self.fpKind = self.fpKind or any([isFP(expr) for expr in x])

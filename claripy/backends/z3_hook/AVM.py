@@ -1,4 +1,5 @@
 from cffi import FFI
+import tempfile
 
 
 class Executor():
@@ -21,11 +22,16 @@ class Executor():
         self.ffi.dlclose(self.dll)
 
 
-if __name__ == "__main__":
-    '''Test.'''
-    dl = Executor()
-    dl.cdef('int printf(const char *, ...);')
-    dl.open('libc.so.6')
-    printf = dl.sym('printf')
-    printf('%s, %s\n', dl.new('char []', 'hello'), dl.new('char []', 'world'))
-    dl.close()
+def doAVM(codes):
+    f = tempfile.NamedTemporaryFile(mode="wb", delete=False, suffix=".c")
+    f.write('''#include <stdint.h>
+#define abs(x) (x) > 0 ? (x) : -(x)
+''')
+    for _, _, code in codes:
+        print code
+        f.write(code + '\n')
+    f.close()
+    print f.name
+    #f.write
+    exit(0)
+    raise Exception("todo: search")
