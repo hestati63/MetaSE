@@ -1,5 +1,5 @@
 import z3
-from .ast import Compiler
+from .compile import Compiler
 
 
 def isFP(ast):
