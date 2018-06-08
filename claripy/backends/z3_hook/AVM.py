@@ -33,12 +33,15 @@ class Executor():
     def int(self, val):
         return ffi.cast('int', val)
 
-    def longlong(self, val):
+    def long(self, val):
         return ffi.cast('long', val)
 
-    def run(self, _id, *args):
-        #TODO
+    def run(self, _id, args):
         fun = getattr(self.dll, 'fitness_{}'.format(_id))
+        arg = ffi.new('void **')
+        for i, val in enumerate(args):
+            arg[i] = ffi.cast('void *', val)
+        return fun(arg)
 
 
 def createLibrary(codes):
@@ -68,7 +71,7 @@ def get_arg_constructor(size, executor):
     elif size == 32:
         return executor.int
     elif size == 64:
-        return executor.longlong
+        return executor.long
 
 
 def doAVM(codes):
@@ -86,8 +89,7 @@ def doAVM(codes):
     args = {name: get_arg_constructor(size, executor)
             for size, name in allfv}
     # initialize all argument to zero
-    args_value = {name: func(0) for name, func in args.items()}
-
+    args_value = {name: func(0x37) for name, func in args.items()}
     # TODO: Write AVM codes
     # XXX: now play with args_value and funcs and do AVM
     # XXX: funcs consist of three values: uuid, op, branch_distance
@@ -95,6 +97,9 @@ def doAVM(codes):
     # XXX: you can get fitness of function by calling
     # XXX: executor.run(uuid, args)
     # XXX: this function should return dictionary: name: value
+    # XXX: Example
+    # XXX: executor.run(funcs[0][0], args_value.values())
+
 
     os.unlink(library)
     raise Exception("todo: search")
