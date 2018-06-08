@@ -6,7 +6,7 @@ from ...ast.fp import FP
 
 
 fvPool = string.uppercase + string.lowercase
-K = 1
+K = 0
 relops = [
     '__eq__', 'fpEQ',
     '__ne__', 'fpNEQ',
@@ -157,7 +157,7 @@ class CompileService(object):
                 _id = self.getFreeId()
                 tp = size2type(expr.size())
                 precond += '{tp} {id} = {v};\n'.format(tp=tp, id=_id, v=code)
-                code = '*({tp} *)(&{id})'.format(tp=_type, id=_id)
+                code = '({tp})({id})'.format(tp=_type, id=_id)
             else:
                 raise Exception("What?")
             return fv, precond, code
