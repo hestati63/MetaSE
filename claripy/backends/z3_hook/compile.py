@@ -144,8 +144,13 @@ class CompileService(object):
 
     def handle_FP(self, ast):
         if ast.op == 'fpToFP':
-            mode, expr, _type = ast.args
-            assert mode == 'RNE'
+            if len(ast.args) == 3:
+                mode, expr, _type = ast.args
+                assert mode == 'RNE'
+            elif len(ast.args) == 2:
+                expr, _type = ast.args
+            else:
+                raise ValueError
             _type = _type.name.lower()
             fv, precond, code = self._compile(expr)
             if isinstance(expr, FP):
@@ -250,7 +255,6 @@ class CompileService(object):
                 now += sz
             return fvs, precond, '|'.join(codes)
         elif ast.op == 'Extract':
-            # TODO: add helper function extract
             st, ed, expr = ast.args
             fv, pr, expr = self._compile(expr)
             code = 'extract({exp}, {st}, {ed})'.format(exp=expr, st=st, ed=ed)
@@ -285,7 +289,5 @@ class Compiler(object):
         if op == 'And':
             # in this case, we can divide them into three parts
             return [self.__try_divide(arg) for arg in ast.args]
-        elif op == 'Not':
-            return ast
         else:
-            raise NotImplementedError('%s' % op)
+            return ast
