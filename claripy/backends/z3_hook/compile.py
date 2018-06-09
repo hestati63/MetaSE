@@ -31,7 +31,7 @@ def size2type(size):
     elif size == 64:
         return 'uint64_t'
     else:
-        raise Exception("Unknown size: %d" % size)
+        raise ValueError("Unknown size: %d" % size)
 
 
 def getType(ast):
@@ -40,7 +40,7 @@ def getType(ast):
     elif isinstance(ast, FP):
         return sort2type(ast.sort)
     else:
-        raise Exception("Unknown type: %s" % ast)
+        raise TypeError("Unknown type: %s" % ast)
 
 
 def genFpPrecond(ids, asts, exprs):
@@ -71,7 +71,7 @@ def normalize_op(op, negate=False):
     elif op == '__lt__' or op == 'fpLT':
         return 'ge' if negate else 'lt'
     else:
-        raise Exception("Unknown Op: %s" % op)
+        raise ValueError("Unknown Op: %s" % op)
 
 
 def get_f(op):
@@ -88,7 +88,7 @@ def get_f(op):
     elif op == 'lt':
         return '({a}) - ({b}) + {K}'
     else:
-        raise Exception("Unknown Op: %s" % op)
+        raise ValueError("Unknown Op: %s" % op)
 
 
 class CompileService(object):
@@ -129,10 +129,7 @@ class CompileService(object):
                                format(name=n, tp=size2type(sz), idx=idx)
                                for idx, (sz, n) in enumerate(fv))
         else:
-            print ast
-            print ast.op
-            print len(ast.args)
-            exit(0)
+            raise NotImplementedError('%s %s %s' % (ast.op, len(ast.args), ast))
 
         fitness = get_f(op).format(a=code1, b=code2, K=K)
         return op, fv, self.code_template.format(type=getType(args[0]),
@@ -159,17 +156,50 @@ class CompileService(object):
                 precond += '{tp} {id} = {v};\n'.format(tp=tp, id=_id, v=code)
                 code = '({tp})({id})'.format(tp=_type, id=_id)
             else:
-                raise Exception("What?")
+                raise TypeError
             return fv, precond, code
-        elif ast.op == 'fpDiv':
-            mode, dividend, divisor = ast.args
+        elif ast.op == 'fpAdd':
+            mode, op1, op2 = ast.args
             assert mode == 'RNE'
             id1, id2 = self.getFreeId(), self.getFreeId()
-            fv1, pr1, expr1 = self._compile(dividend)
-            fv2, pr2, expr2 = self._compile(divisor)
+            fv1, pr1, expr1 = self._compile(op1)
+            fv2, pr2, expr2 = self._compile(op2)
             precond = pr1 + pr2
             precond += genFpPrecond([id1, id2],
-                                    [dividend, divisor], [expr1, expr2])
+                                    [op1, op2], [expr1, expr2])
+            expr = '({n})+({d})'.format(n=id1, d=id2)
+            return (fv1 | fv2), precond, expr
+        elif ast.op == 'fpSub':
+            mode, op1, op2 = ast.args
+            assert mode == 'RNE'
+            id1, id2 = self.getFreeId(), self.getFreeId()
+            fv1, pr1, expr1 = self._compile(op1)
+            fv2, pr2, expr2 = self._compile(op2)
+            precond = pr1 + pr2
+            precond += genFpPrecond([id1, id2],
+                                    [op1, op2], [expr1, expr2])
+            expr = '({n})-({d})'.format(n=id1, d=id2)
+            return (fv1 | fv2), precond, expr
+        elif ast.op == 'fpMul':
+            mode, op1, op2 = ast.args
+            assert mode == 'RNE'
+            id1, id2 = self.getFreeId(), self.getFreeId()
+            fv1, pr1, expr1 = self._compile(op1)
+            fv2, pr2, expr2 = self._compile(op2)
+            precond = pr1 + pr2
+            precond += genFpPrecond([id1, id2],
+                                    [op1, op2], [expr1, expr2])
+            expr = '({n})*({d})'.format(n=id1, d=id2)
+            return (fv1 | fv2), precond, expr
+        elif ast.op == 'fpDiv':
+            mode, op1, op2 = ast.args
+            assert mode == 'RNE'
+            id1, id2 = self.getFreeId(), self.getFreeId()
+            fv1, pr1, expr1 = self._compile(op1)
+            fv2, pr2, expr2 = self._compile(op2)
+            precond = pr1 + pr2
+            precond += genFpPrecond([id1, id2],
+                                    [op1, op2], [expr1, expr2])
             expr = '({n})/({d})'.format(n=id1, d=id2)
             return (fv1 | fv2), precond, expr
         elif ast.op == 'FPV':
@@ -179,10 +209,8 @@ class CompileService(object):
             return set(), precond, _id
 
         else:
-            print 'UNHANDLED!!!', ast.op
-            print ast.args
-            print ast.sort
-            exit(0)
+            raise NotImplementedError('Unhandled %s %s %s'
+                                      % (ast.sort, ast.op, ast.args))
 
     def handle_BV(self, ast):
         if ast.op == '__add__':
@@ -232,10 +260,7 @@ class CompileService(object):
             name = ast.args[0]
             return set([(size, name)]), '', name
         else:
-            print 'UNHANDLE @ BV'
-            print ast
-            print ast.op
-            exit(0)
+            raise NotImplementedError('Unhandled BV %s %s' % (ast.op, ast))
 
     def handle_Bool(self, ast, negate=False):
         if ast.op == 'Not':
@@ -263,5 +288,4 @@ class Compiler(object):
         elif op == 'Not':
             return ast
         else:
-            print op
-            exit(0)
+            raise NotImplementedError('%s' % op)
