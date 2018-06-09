@@ -9,8 +9,8 @@ import sys
 
 
 def main():
-    path = os.path.abspath(__file__)
-    path = os.path.join('/'.join(path.split('/')[:-1]),  "targets/%s" % sys.argv[1])
+    cwd = '/'.join(os.path.abspath(__file__).split('/')[:-1])
+    path = os.path.join(cwd, "targets/%s" % sys.argv[1])
     proj = angr.Project(path, load_options={'auto_load_libs': False})
 
     # define argument
@@ -31,4 +31,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) == 1:
+        print "Usage: %s <prog>" % sys.argv[0]
+    else:
+        main()
