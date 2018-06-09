@@ -1,5 +1,5 @@
 import z3
-import AVM
+from .AVM import doAVM
 from .compile import Compiler
 
 
@@ -49,7 +49,7 @@ class Solver(z3.Solver):
         for expr in self.assertions():
             codes.extend(list(self.compiler.compile(
                 self.backendobj.simplify(self.backendobj._abstract(expr)))))
-        return AVM.doAVM(codes)
+        return doAVM(codes)
 
     def add(self, *x):
         self.fpKind = self.fpKind or any([isFP(expr) for expr in x])
