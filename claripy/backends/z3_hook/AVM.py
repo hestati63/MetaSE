@@ -4,6 +4,11 @@ import os
 import tempfile
 import subprocess
 
+
+class Found(Exception):
+    pass
+
+
 ffi = FFI()
 
 
@@ -74,6 +79,35 @@ def get_arg_constructor(size, executor):
         return executor.long
 
 
+def sat(op, fitness):
+    if op in ['ge', 'le']:
+        return fitness <= 0
+    elif op in ['gt', 'lt', 'neq']:
+        return fitness < 0
+    elif op in ['eq']:
+        return fitness == 0
+    else:
+        raise Exception("Unknown op")
+
+
+def get_fitness(executor, funcs, args):
+    for uuid, fv, op, bd in funcs:
+        cargs = [args[name] for _, name in fv]
+        fitness = executor.run(uuid, cargs)
+        if not sat(op, fitness):
+            return bd, fitness
+    return bd, fitness
+
+
+def isImproved(cur, prev):
+    if cur[0] > prev[0]:
+        return True
+    elif cur[0] == prev[0]:
+        return cur[1] > prev[1]
+    else:
+        return False
+
+
 def doAVM(codes):
     library = createLibrary(codes)
     executor = Executor(library)
@@ -82,24 +116,56 @@ def doAVM(codes):
     funcs = []
     for idx, (op, fv, code, uuid) in enumerate(codes):
         branch_distance = len(codes) - idx - 1
-        funcs.append((uuid, op, branch_distance))
+        funcs.append((uuid, fv, op, branch_distance))
         executor.cdef(code.split('\n')[0] + ';')
         allfv |= fv
 
     args = {name: get_arg_constructor(size, executor)
             for size, name in allfv}
     # initialize all argument to zero
-    args_value = {name: func(0x37) for name, func in args.items()}
-    # TODO: Write AVM codes
-    # XXX: now play with args_value and funcs and do AVM
-    # XXX: funcs consist of three values: uuid, op, branch_distance
-    # XXX: op is comparison operator
-    # XXX: you can get fitness of function by calling
-    # XXX: executor.run(uuid, args)
-    # XXX: this function should return dictionary: name: value
-    # XXX: Example
-    # XXX: executor.run(funcs[0][0], args_value.values())
+    args_value = {name: 0 for name, _ in args.items()}
+    arglen = len(args_value)
+    for _ in range(100):
+        try:
+            improvement = 1
+            while improvement != 0:
+                idx = 0
+                improvement = 0
+                while idx < arglen:
+                    packed = {k: args[k](v) for k, v in args_value.items()}
+                    cur = get_fitness(executor, funcs, packed)
+                    k = args_value.keys()[idx]
+                    move_type = 1
+                    improved = False
+                    while True:
+                        if move_type:
+                            if args_value[k] == 0:
+                                args_value[k] = 1
+                            else:
+                                args_value[k] = args_value[k] * 2
+                        else:
+                            args_value[k] = args_value[k] + 1
 
+                        packed = {k: args[k](v) for k, v in args_value.items()}
+                        now = get_fitness(executor, funcs, packed)
+                        if isImproved(now, cur):
+                            improved = True
+                            cur = now
+                        else:
+                            if move_type:
+                                move_type = 0
+                                args_value[k] /= 2
+                            else:
+                                improvement = improvement + improved
+                                break
+                    idx += 1
+        except Found:
+            break
+        # Change arg_value with random initializer
+    else:
+        args_value = None
 
+    if args_value:
+        args_value = {(name, size,): args_value[name] for size, name in allfv}
     os.unlink(library)
-    raise Exception("todo: search")
+    return args_value
