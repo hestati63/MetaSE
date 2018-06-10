@@ -20,22 +20,30 @@ def sat(op, fitness):
 
 
 def get_fitness(executor, args):
-    for uuid, fv, op, bd in executor.funcs:
-        cargs = [args[name] for _, name in fv]
-        if all(arg.valid() for arg in cargs):
-            fitness = executor(uuid, cargs)
-            if not sat(op, fitness):
-                return bd, fitness
+    def helper(func):
+        if isinstance(func, list):
+            return min(map(helper, func))
         else:
-            return inf, inf
+            uuid, fv, op, bd = func
+            cargs = [args[name] for _, name in fv]
+            if all(arg.valid() for arg in cargs):
+                fitness = executor(uuid, cargs)
+                if sat(op, fitness):
+                    return bd, fitness, op
+            return inf, inf, op
+
+    bd = fitness = inf
+    for func in executor.funcs:
+        bd_, fitness_, op = helper(func)
+        if bd_ < bd:
+            bd, fitness = bd_, fitness_
+        else:
+            break
     return bd, fitness
 
 
 def is_improved(cur, prev):
-    if cur[0] == prev[0]:
-        return cur[1] > prev[1]
-    else:
-        return cur[0] > prev[0]
+    return cur < prev
 
 
 def fetch(v, mT):

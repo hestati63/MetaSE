@@ -35,7 +35,7 @@ class BV():
         return BV(self.val * o, self.size)
 
     def __div__(self, o):
-        return BV(self.val/o, self.size)
+        return BV(self.val / o, self.size)
 
     def random_move(self):
         # TODO: How to random move?
@@ -48,7 +48,7 @@ class Executor():
         self.dl_name = self.__compile(name)
         self.dll = ffi.dlopen(self.dl_name)
         for i in defs:
-            ffi.cdef(i)
+            ffi.cdef(i, override=True)
 
     def __preprocess(self, codes):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".c") as f:
@@ -58,14 +58,25 @@ class Executor():
         #define extract(value, start, length) \
             (((value) >> (start)) & (~0ULL >> (sizeof(value) * 8) - (length)))
             ''')
+
+            def helper(chunk, bd, defs, funcs, fv_set):
+                if isinstance(chunk, list):
+                    or_funcs = []
+                    for c in chunk:
+                        helper(c, bd, defs, or_funcs, fv_set)
+                    funcs.append(or_funcs)
+                else:
+                    op, fv, code, uuid = chunk
+                    f.write(code + '\n')
+                    defs.append(code.split('\n')[0] + ';')
+                    funcs.append((uuid, fv, op, bd))
+                    fv_set |= fv
+
             defs = []
             funcs = []
             fv_set = set()
-            for idx, (op, fv, code, uuid) in enumerate(codes):
-                f.write(code + '\n')
-                defs.append(code.split('\n')[0] + ';')
-                funcs.append((uuid, fv, op, len(codes) - idx - 1))
-                fv_set |= fv
+            for idx, code in enumerate(codes):
+                helper(code, len(codes) - idx - 1, defs, funcs, fv_set)
             fvs = {name: size for size, name in fv_set}
         return funcs, defs, fvs, name
 

@@ -118,6 +118,8 @@ class CompileService(object):
     def handle_Top_Bool(self, ast, negate=False):
         if ast.op == 'Not':
             return self.handle_Top_Bool(ast.args[0], negate=not negate)
+        elif ast.op == 'Or':
+            return map(self.handle_Top_Bool, ast.args)
         elif ast.op in relops:
             op = normalize_op(ast.op, negate=negate)
             args = ast.args
@@ -129,7 +131,8 @@ class CompileService(object):
                                format(name=n, tp=size2type(sz), idx=idx)
                                for idx, (sz, n) in enumerate(fv))
         else:
-            raise NotImplementedError('%s %s %s' % (ast.op, len(ast.args), ast))
+            raise NotImplementedError('%s %s %s'
+                                      % (ast.op, len(ast.args), ast))
 
         fitness = get_f(op).format(a=code1, b=code2, K=K)
         return op, fv, self.code_template.format(type=getType(args[0]),
