@@ -1,4 +1,7 @@
-from .executor import Executor
+from .executor import Executor, BV
+
+
+inf = float('inf')
 
 
 class Found(Exception):
@@ -18,11 +21,13 @@ def sat(op, fitness):
 
 def get_fitness(executor, args):
     for uuid, fv, op, bd in executor.funcs:
-        cargs = [executor.get_arg_constructor(args[name], size)
-                 for size, name in fv]
-        fitness = executor(uuid, cargs)
-        if not sat(op, fitness):
-            return bd, fitness
+        cargs = [args[name] for _, name in fv]
+        if all(arg.valid() for arg in cargs):
+            fitness = executor(uuid, cargs)
+            if not sat(op, fitness):
+                return bd, fitness
+        else:
+            return inf, inf
     return bd, fitness
 
 
@@ -41,7 +46,8 @@ def doAVM(codes):
     executor = Executor(codes)
 
     # initialize all argument to zero
-    args_value = {name: 0 for name in executor.fvs.keys()}
+    print executor.fvs
+    args_value = {name: BV(0, size) for name, size in executor.fvs.items()}
     arglen = len(args_value)
     for _ in range(100):
         try:
@@ -52,17 +58,29 @@ def doAVM(codes):
                     cur = get_fitness(executor, args_value)
                     k = args_value.keys()[idx]
                     st = cur
+                    # Pattern Move
                     while True:
-                        args_value[k] = fetch(args_value[k], 0)
+                        args_value[k] = \
+                                args_value[k] if args_value[k] != 0 else 1
                         now = get_fitness(executor, args_value)
                         if is_improved(now, cur):
                             cur = now
                         else:
                             args_value[k] = args_value[k] / 2
                             break
-
-                    while True:
-                        args_value[k] = fetch(args_value[k], 1)
+                    # get direction
+                    backup = args_value[k]
+                    args_value[k] = backup + 1
+                    inc = get_fitness(executor, args_value)
+                    direction = is_improved(inc, cur)
+                    if not direction:
+                        args_value[k] = backup - 1
+                        dec = get_fitness(executor, args_value)
+                        direction = -is_improved(dec, cur)
+                    args_value[k] = backup
+                    # Exploratory Move
+                    while direction:
+                        args_value[k] = args_value[k] + direction
                         now = get_fitness(executor, args_value)
                         if is_improved(now, cur):
                             cur = now
@@ -75,7 +93,7 @@ def doAVM(codes):
                     break
         except Found:
             break
-        # TODO: Change arg_value with random initializer
+        args_value = {n: v.random_move() for n, v in args_value.items()}
     else:
         return None
 

@@ -8,6 +8,40 @@ from cffi import FFI
 ffi = FFI()
 
 
+class BV():
+    def __init__(self, val, size):
+        self.val = val
+        self.size = size
+
+    def valid(self):
+        return 0 <= self.val <= (1L << self.size) - 1
+
+    def __str__(self):
+        return "{}(BV{})".format(self.val, self.size)
+
+    def __repr__(self):
+        return "{}(BV{})".format(self.val, self.size)
+
+    def __call__(self):
+        return self.val
+
+    def __add__(self, o):
+        return BV(self.val + o, self.size)
+
+    def __sub__(self, o):
+        return BV(self.val - o, self.size)
+
+    def __mul__(self, o):
+        return BV(self.val * o, self.size)
+
+    def __div__(self, o):
+        return BV(self.val/o, self.size)
+
+    def random_move(self):
+        # TODO: How to random move?
+        return self
+
+
 class Executor():
     def __init__(self, codes):
         self.funcs, defs, self.fvs, name = self.__preprocess(codes)
@@ -54,17 +88,5 @@ class Executor():
         fun = getattr(self.dll, 'fitness_{}'.format(_id))
         arg = ffi.new('void **')
         for i, val in enumerate(args):
-            arg[i] = ffi.cast('void *', val)
+            arg[i] = ffi.cast('void *', val())
         return fun(arg)
-
-    def get_arg_constructor(self, val, size):
-        if size == 8:
-            return ffi.cast('char', val)
-        elif size == 16:
-            return ffi.cast('short', val)
-        elif size == 32:
-            return ffi.cast('int', val)
-        elif size == 64:
-            return ffi.cast('long', val)
-        else:
-            raise ValueError('Unknown size')
