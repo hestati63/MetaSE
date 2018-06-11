@@ -6,7 +6,6 @@ from ...ast.fp import FP
 
 
 fvPool = string.uppercase + string.lowercase
-K = 0
 relops = [
     '__eq__', 'fpEQ',
     '__ne__', 'fpNEQ',
@@ -80,13 +79,13 @@ def get_f(op):
     elif op == 'neq':
         return '-abs(({b}) - ({a}))'
     elif op == 'ge':
-        return '({b}) - ({a}) + {K}'
+        return '({b}) - ({a})'
     elif op == 'le':
-        return '({a}) - ({b}) + {K}'
+        return '({a}) - ({b})'
     elif op == 'gt':
-        return '({b}) - ({a}) + {K}'
+        return '({b}) - ({a})'
     elif op == 'lt':
-        return '({a}) - ({b}) + {K}'
+        return '({a}) - ({b})'
     else:
         raise ValueError("Unknown Op: %s" % op)
 
@@ -119,7 +118,15 @@ class CompileService(object):
         if ast.op == 'Not':
             return self.handle_Top_Bool(ast.args[0], negate=not negate)
         elif ast.op == 'Or':
-            return map(self.handle_Top_Bool, ast.args)
+            res = []
+            for _ast in ast.args:
+                r = self.handle_Top_Bool(_ast)
+                if isinstance(r, list):
+                    res.extend(r)
+                else:
+                    res.append(r)
+            return res
+
         elif ast.op in relops:
             op = normalize_op(ast.op, negate=negate)
             args = ast.args
@@ -134,12 +141,13 @@ class CompileService(object):
             raise NotImplementedError('%s %s %s'
                                       % (ast.op, len(ast.args), ast))
 
-        fitness = get_f(op).format(a=code1, b=code2, K=K)
-        return op, fv, self.code_template.format(type=getType(args[0]),
+        fit = get_f(op).format(a=code1, b=code2)
+        tp = getType(args[0])
+        return op, fv, self.code_template.format(type=tp,
                                                  id=ast.ana_uuid,
                                                  unpack=unpack,
                                                  defs=precond,
-                                                 code=fitness), ast.ana_uuid
+                                                 code=fit), ast.ana_uuid, tp
 
     def _compile(self, ast):
         func = getattr(self, 'handle_{}'.format(ast.__class__.__name__))
