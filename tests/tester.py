@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import cProfile
 import os
 import angr
 import time
@@ -8,9 +9,9 @@ import claripy
 import sys
 
 
-def main():
+def main(arg):
     cwd = '/'.join(os.path.abspath(__file__).split('/')[:-1])
-    path = os.path.join(cwd, "targets/%s" % sys.argv[1])
+    path = os.path.join(cwd, "targets/%s" % arg)
     proj = angr.Project(path, load_options={'auto_load_libs': False})
 
     # define argument
@@ -33,5 +34,7 @@ def main():
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print "Usage: %s <prog>" % sys.argv[0]
-    else:
-        main()
+    elif len(sys.argv) == 2:
+        main(sys.argv[1])
+    elif sys.argv[1] == 'profile':
+        cProfile.run("main('{}')".format(sys.argv[2]))
