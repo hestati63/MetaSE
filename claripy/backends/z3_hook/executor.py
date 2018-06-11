@@ -37,6 +37,12 @@ class BV():
     def __div__(self, o):
         return BV(self.val / o, self.size)
 
+    def __ne__(self, o):
+        return self.val != o
+
+    def __eq__(self, o):
+        return self.val == o
+
     def random_move(self):
         # TODO: How to random move?
         return self
@@ -59,24 +65,27 @@ class Executor():
             (((value) >> (start)) & (~0ULL >> (sizeof(value) * 8) - (length)))
             ''')
 
-            def helper(chunk, bd, defs, funcs, fv_set):
+            def helper(chunk, bd, defs, funcs, fv_set, builded):
                 if isinstance(chunk, list):
                     or_funcs = []
                     for c in chunk:
-                        helper(c, bd, defs, or_funcs, fv_set)
+                        helper(c, bd, defs, or_funcs, fv_set, builded)
                     funcs.append(or_funcs)
                 else:
                     op, fv, code, uuid = chunk
-                    f.write(code + '\n')
-                    defs.append(code.split('\n')[0] + ';')
+                    if uuid not in builded:
+                        f.write(code + '\n')
+                        builded.append(uuid)
+                        defs.append(code.split('\n')[0] + ';')
                     funcs.append((uuid, fv, op, bd))
                     fv_set |= fv
 
             defs = []
             funcs = []
+            build = []
             fv_set = set()
             for idx, code in enumerate(codes):
-                helper(code, len(codes) - idx - 1, defs, funcs, fv_set)
+                helper(code, len(codes) - idx - 1, defs, funcs, fv_set, build)
             fvs = {name: size for size, name in fv_set}
         return funcs, defs, fvs, name
 

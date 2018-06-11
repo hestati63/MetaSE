@@ -37,8 +37,8 @@ class Solver(z3.Solver):
     def model(self):
         if self.fpKind:
             s = z3.Solver()
-            for key, value in self.answer:
-                s.add(z3.BitVec(key[0], key[1]) == value)
+            for key, value in self.answer.items():
+                s.add(z3.BitVec(key[0], key[1]) == value.val)
             assert (s.check() == z3.sat)
             return s.model()
         else:
