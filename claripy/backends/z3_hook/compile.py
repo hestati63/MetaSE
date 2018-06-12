@@ -218,27 +218,37 @@ class CompileService(object):
                                     [op1, op2], [expr1, expr2])
             expr = '({n})/({d})'.format(n=id1, d=id2)
             return (fv1 | fv2), precond, expr
+        elif ast.op == 'fpNeg':
+            op, = ast.args
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genFpPrecond([ID], [op], [expr])
+            expr = '-({id})'.format(id=ID)
+            return fv, precond, expr
         elif ast.op == 'FPV':
             _id = self.getFreeId()
             precond = '{type} {id} = {val};\n'.format(type=sort2type(ast.sort),
                                                       id=_id, val=ast.args[0])
             return set(), precond, _id
-
         else:
             raise NotImplementedError('Unhandled %s %s %s'
                                       % (ast.sort, ast.op, ast.args))
 
     def handle_BV(self, ast):
         if ast.op == '__add__':
-            arg1, arg2 = ast.args
-            id1, id2 = self.getFreeId(), self.getFreeId()
-            fv1, pr1, expr1 = self._compile(arg1)
-            fv2, pr2, expr2 = self._compile(arg2)
-            precond = pr1 + pr2
-            precond += genBvPrecond([id1, id2], [arg1, arg2], [expr1, expr2])
-
-            code = '({a1})+({a2})'.format(a1=id1, a2=id2)
-            return (fv1 | fv2), precond, code
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')+('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__mul__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')*('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
         elif ast.op == 'BVV':
             _id = self.getFreeId()
             val, size = ast.args
@@ -274,6 +284,14 @@ class CompileService(object):
             size = ast.size()
             name = ast.args[0]
             return set([(size, name)]), '', name
+        elif ast.op == '__invert__':
+            pass
+        elif ast.op == 'fpToIEEEBV':
+            pass
+        elif ast.op == 'fpToSBV':
+            pass
+        elif ast.op == 'fpToUBV':
+            pass
         else:
             raise NotImplementedError('Unhandled BV %s %s' % (ast.op, ast))
 
