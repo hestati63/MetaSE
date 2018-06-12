@@ -96,6 +96,8 @@ class Executor():
 #define abs(x) ((x) > 0 ? (x) : -(x))
 #define extract(value, start, length) \
 (((value) >> (start)) & (~0ULL >> (sizeof(value) * 8) - (length)))
+#define inf INFINITY
+#define nan NAN
 ''')
 
             for idx, code in enumerate(codes):
@@ -128,7 +130,7 @@ class Executor():
         with open(name + '.c') as f: print f.read()
         raw_input()
         subprocess.check_call(['gcc', '-O3', '-c', '-Wno-pointer-to-int-cast',
-                              '-fpic', name + '.c', '-o', name + '.o'])
+                              '-w', '-fpic', name + '.c', '-o', name + '.o'])
         subprocess.check_call(['gcc', '-shared', '-o',
                                name + '.so', name + '.o'])
         os.unlink(name + '.o')

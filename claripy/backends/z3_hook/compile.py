@@ -125,7 +125,6 @@ class CompileService(object):
                 else:
                     res.append(r)
             return res
-
         elif ast.op in relops:
             op = normalize_op(ast.op, negate=negate)
             args = ast.args
@@ -136,6 +135,17 @@ class CompileService(object):
             unpack = '\n'.join('{tp} {name} = ({tp}) args[{idx}];'.
                                format(name=n, tp=size2type(sz), idx=idx)
                                for idx, (sz, n, _) in enumerate(fv))
+        elif ast.op == 'BoolV':
+            op, = ast.args
+            return ('eq',
+                    set(),
+                    self.code_template.format(type='float',
+                                              id=ast.ana_uuid,
+                                              unpack='',
+                                              defs='',
+                                              code=1-op),
+                    ast.ana_uuid,
+                    'float')
         else:
             raise NotImplementedError('%s %s %s'
                                       % (ast.op, len(ast.args), ast))
@@ -275,9 +285,9 @@ class CompileService(object):
             _id = self.getFreeId()
             val, size = ast.args
             if size <= 32:
-                precond = 'uint32_t {id} = {val};\n'.format(id=_id, val=val)
+                precond = 'uint32_t {id} = {val}U;\n'.format(id=_id, val=val)
             else:
-                precond = 'uint64_t {id} = {val};\n'.format(id=_id, val=val)
+                precond = 'uint64_t {id} = {val}UL;\n'.format(id=_id, val=val)
             return set(), precond, _id
         elif ast.op == 'Concat':
             res = [(self._compile(at), at.size()) for at in ast.args]
