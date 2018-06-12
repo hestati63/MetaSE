@@ -1,6 +1,7 @@
 import os
 import tempfile
 import subprocess
+import struct
 
 from cffi import FFI
 
@@ -31,10 +32,18 @@ def get_checker_by_sat(op):
 ffi = FFI()
 
 class FP():
-    # TODO
     def __init__(self, val, size):
-        self.mantissa = 0
-        self.exponent = 0
+        bits = ''.join(bin(ord(c))[2:].rjust(8, '0')
+                       for c in struct.pack('!f', val))
+        self.sign = bits[0]
+        if size == 32:
+            self.exponent = bits[1:9]
+            self.mantissa = bits[9:]
+        elif size == 64:
+            self.exponent = bits[1:11]
+            self.mantissa = bits[11:]
+        else:
+            raise ValueError
 
 
 class BV():
