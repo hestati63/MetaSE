@@ -37,15 +37,17 @@ class FP():
         self.size = size
         self.ffikind = ffi.cast('void *', val)
 
-        bits = ''.join(bin(ord(c))[2:].rjust(8, '0')
-                       for c in struct.pack('!f', val))
-
-        self.sign = int(bits[0], 2)
         if size == 32:
+            bits = ''.join(bin(ord(c))[2:].rjust(8, '0')
+                           for c in struct.pack('!f', val))
+            self.sign = int(bits[0], 2)
             self.exponent = int(bits[1:9], 2)
             self.mantissa = int(bits[9:], 2)
             self.valid = self.exponent < 2 ** 8 - 1
         elif size == 64:
+            bits = ''.join(bin(ord(c))[2:].rjust(8, '0')
+                           for c in struct.pack('!d', val))
+            self.sign = int(bits[0], 2)
             self.exponent = int(bits[1:11], 2)
             self.mantissa = int(bits[11:], 2)
             self.valid = self.exponent < 2 ** 11 - 1
