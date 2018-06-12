@@ -6,14 +6,13 @@ from ...ast.fp import FP
 
 
 fvPool = string.uppercase + string.lowercase
-relops = [
-    '__eq__', 'fpEQ',
-    '__ne__', 'fpNEQ',
-    '__ge__', 'fpGE',
-    '__le__', 'fpLE',
-    '__gt__', 'fpGT',
-    '__lt__', 'fpLT',
-]
+relops_eq = ['__eq__', 'fpEQ']
+relops_ne = ['__ne__', 'fpNEQ']
+relops_ge = ['__ge__', 'fpGE', 'UGE', 'SGE']
+relops_le = ['__le__', 'fpLE', 'ULE', 'SLE']
+relops_gt = ['__gt__', 'fpGT', 'UGT', 'SGT']
+relops_lt = ['__lt__', 'fpLT', 'ULT', 'SLT']
+relops = sum([relops_eq, relops_ne, relops_ge, relops_le, relops_gt, relops_lt], [])
 
 
 def sort2type(sort):
@@ -57,17 +56,17 @@ def genBvPrecond(ids, asts, exprs):
 
 
 def normalize_op(op, negate=False):
-    if op == '__eq__' or op == 'fpEQ':
+    if op in relops_eq:
         return 'neq' if negate else 'eq'
-    elif op == '__ne__' or op == 'fpNEQ':
+    elif op in relops_ne:
         return 'eq' if negate else 'neq'
-    elif op == '__ge__' or op == 'fpGE':
+    elif op in relops_ge:
         return 'lt' if negate else 'ge'
-    elif op == '__le__' or op == 'fpLE':
+    elif op in relops_le:
         return 'gt' if negate else 'le'
-    elif op == '__gt__' or op == 'fpGT':
+    elif op in relops_gt:
         return 'le' if negate else 'gt'
-    elif op == '__lt__' or op == 'fpLT':
+    elif op in relops_lt:
         return 'ge' if negate else 'lt'
     else:
         raise ValueError("Unknown Op: %s" % op)
