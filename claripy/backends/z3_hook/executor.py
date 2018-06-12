@@ -65,22 +65,26 @@ class FP():
         return self.val
 
     def __add__(self, o):
-        return FP(self.val + o, self.size)
+        mantissa += 1
+        if size == 32:
+            if mantissa == 2 ** 23:
+                mantissa = 0
+                exponent += 1
+        else:
+            if mantissa == 2 ** 52:
+                mantissa = 0
+                exponent += 1
 
     def __sub__(self, o):
-        return FP(self.val - o, self.size)
-
-    def __mul__(self, o):
-        return FP(self.val * o, self.size)
-
-    def __div__(self, o):
-        return FP(self.val / o, self.size)
-
-    def __ne__(self, o):
-        return self.val != o
-
-    def __eq__(self, o):
-        return self.val == o
+        mantissa -= 1
+        if size == 32:
+            if mantissa < 0:
+                mantissa = 2 ** 23 - 1
+                exponent -= 1
+        else:
+            if mantissa < 0:
+                mantissa = 2 ** 52 - 1
+                exponent -= 1
 
 
 class BV():
