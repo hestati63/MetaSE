@@ -1,4 +1,4 @@
-from .executor import Executor, BV
+from .executor import Executor, BV, FP
 
 
 inf = float('inf')
@@ -38,7 +38,8 @@ def doAVM(codes):
     executor = Executor(codes)
 
     # initialize all argument to zero
-    args_value = {name: BV(0, size) for name, size in executor.fvs.items()}
+    args_value = {name: FP(0, size) if isfp else BV(0, size)
+                        for name, (size, isfp) in executor.fvs.items()}
     arglen = len(args_value)
     for _ in range(100):
         while True:
@@ -73,6 +74,7 @@ def doAVM(codes):
                         args_value[k] = pv + delta
                         delta = 2 * delta
                         now = get_fitness(executor, args_value)
+                        print now, args_value
                         if now is None:
                             return pack_result(args_value, executor)
                         if now <= cur:

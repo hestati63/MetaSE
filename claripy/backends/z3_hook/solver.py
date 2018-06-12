@@ -34,7 +34,10 @@ class Solver(z3.Solver):
                 r = z3.Solver.check(self)
                 self.fpKind = False
                 if r == z3.sat:
+                    print self.assertions()
+                    print z3.Solver.model(self)
                     print 'wrong result'
+                    raw_input()
                 return r
             else:
                 return z3.sat

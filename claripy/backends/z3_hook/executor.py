@@ -30,6 +30,12 @@ def get_checker_by_sat(op):
 
 ffi = FFI()
 
+class FP():
+    # TODO
+    def __init__(self, val, size):
+        self.mantissa = 0
+        self.exponent = 0
+
 
 class BV():
     def __init__(self, val, size):
@@ -41,10 +47,10 @@ class BV():
         self.valid = 0 <= self.val <= mask
 
     def __str__(self):
-        return "{}(BV{})".format(self.val, self.size)
+        return "{:x}(BV{})".format(self.val, self.size)
 
     def __repr__(self):
-        return "{}(BV{})".format(self.val, self.size)
+        return "{:x}(BV{})".format(self.val, self.size)
 
     def __call__(self):
         return self.val
@@ -115,10 +121,12 @@ class Executor():
                         f.write(code + '\n')
                         fv_set |= fv
                     funcs.append((bd, (uuid, fv, get_checker_by_sat(op)), ))
-        fvs = {name: size for size, name in fv_set}
+        fvs = {name: (size, isfp) for size, name, isfp in fv_set}
         return funcs, defs, fvs, name
 
     def __compile(self, name):
+        with open(name + '.c') as f: print f.read()
+        raw_input()
         subprocess.check_call(['gcc', '-O3', '-c', '-Wno-pointer-to-int-cast',
                               '-fpic', name + '.c', '-o', name + '.o'])
         subprocess.check_call(['gcc', '-shared', '-o',

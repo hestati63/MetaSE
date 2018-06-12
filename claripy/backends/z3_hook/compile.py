@@ -135,7 +135,7 @@ class CompileService(object):
             precond = pr1 + pr2
             unpack = '\n'.join('{tp} {name} = ({tp}) args[{idx}];'.
                                format(name=n, tp=size2type(sz), idx=idx)
-                               for idx, (sz, n) in enumerate(fv))
+                               for idx, (sz, n, _) in enumerate(fv))
         else:
             raise NotImplementedError('%s %s %s'
                                       % (ast.op, len(ast.args), ast))
@@ -158,6 +158,7 @@ class CompileService(object):
                 mode, expr, _type = ast.args
                 assert mode == 'RNE'
             elif len(ast.args) == 2:
+                mode = None
                 expr, _type = ast.args
             else:
                 raise ValueError
@@ -165,11 +166,19 @@ class CompileService(object):
             fv, precond, code = self._compile(expr)
             if isinstance(expr, FP):
                 code = '({tp})({expr})'.format(tp=_type, expr=code)
-            elif isinstance(expr, BV):
+            elif isinstance(expr, BV) and mode:
                 _id = self.getFreeId()
                 tp = size2type(expr.size())
                 precond += '{tp} {id} = {v};\n'.format(tp=tp, id=_id, v=code)
                 code = '({tp})({id})'.format(tp=_type, id=_id)
+            elif isinstance(expr, BV) and mode is None:
+                _id = self.getFreeId()
+                tp = size2type(expr.size())
+                if expr.op == 'BVS':
+                    a, b, c = list(fv)[0]
+                    fv = set([(a, b, True)])
+                precond += '{tp} {id} = {v};\n'.format(tp=tp, id=_id, v=code)
+                code = '*({tp}*)(&{id})'.format(tp=_type, id=_id)
             else:
                 raise TypeError
             return fv, precond, code
@@ -296,7 +305,7 @@ class CompileService(object):
         elif ast.op == 'BVS':
             size = ast.size()
             name = ast.args[0]
-            return set([(size, name)]), '', name
+            return set([(size, name, False)]), '', name
         elif ast.op == '__invert__':
             op, = ast.args
             ID = self.getFreeId()
