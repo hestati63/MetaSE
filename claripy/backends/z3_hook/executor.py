@@ -28,32 +28,44 @@ def get_checker_by_sat(op):
     else:
         raise ValueError("Unknown op")
 
-
+max_mantissa_64 = 2 ** 52
+max_mantissa_32 = 2 ** 23
+max_exp_64 = 2 ** 11 - 1
+max_exp_32 = 2 ** 8 - 1
 ffi = FFI()
 
 class FP():
-    def __init__(self, val, size):
-        self.val = val
-        self.size = size
-        self.ffikind = ffi.cast('void *', val)
-
-        if size == 32:
-            bits = ''.join(bin(ord(c))[2:].rjust(8, '0')
-                           for c in struct.pack('!f', val))
-            self.sign = int(bits[0], 2)
-            self.exponent = int(bits[1:9], 2)
-            self.mantissa = int(bits[9:], 2)
-            self.valid = self.exponent < 2 ** 8 - 1
-        elif size == 64:
-            bits = ''.join(bin(ord(c))[2:].rjust(8, '0')
-                           for c in struct.pack('!d', val))
-            self.sign = int(bits[0], 2)
-            self.exponent = int(bits[1:11], 2)
-            self.mantissa = int(bits[11:], 2)
-            self.valid = self.exponent < 2 ** 11 - 1
+    def __init__(self, val, size, m=None, exp=None, sign=True):
+        if m is not None:
+            self.sign = sign
+            self.mantissa = m
+            self.exponent = exp
         else:
-            raise ValueError
+            if size == 32:
+                bits = ''.join(bin(ord(c))[2:].rjust(8, '0')
+                               for c in struct.pack('!f', val))
+                self.sign = int(bits[0], 2)
+                self.exponent = int(bits[1:9], 2)
+                self.mantissa = int(bits[9:], 2)
+            elif size == 64:
+                bits = ''.join(bin(ord(c))[2:].rjust(8, '0')
+                               for c in struct.pack('!d', val))
+                self.sign = int(bits[0], 2)
+                self.exponent = int(bits[1:12], 2)
+                self.mantissa = int(bits[12:], 2)
+            else:
+                raise ValueError
+        if size == 32:
+            self.val = (self.sign << 31L)
+            self.val |= (self.exponent << 23L) | self.mantissa
+            self.valid = self.exponent <= max_exp_32
+        else:
+            self.val = (self.sign << 63L)
+            self.val |= (self.exponent << 52L) | self.mantissa
+            self.valid = self.exponent <= max_exp_64
 
+        self.size = size
+        self.ffikind = ffi.cast('void *', self.val)
 
     def __str__(self):
         return "{:x}(FP{})".format(self.val, self.size)
@@ -65,26 +77,33 @@ class FP():
         return self.val
 
     def __add__(self, o):
-        mantissa += 1
-        if size == 32:
-            if mantissa == 2 ** 23:
+        mantissa = self.mantissa + o
+        exponent = self.exponent
+        max_mantissa = max_mantissa_32 if self.size == 32 else max_mantissa_64
+        max_exp = max_exp_32 if self.size == 32 else max_exp_64
+        while mantissa >= max_mantissa:
+            mantissa -= max_mantissa
+            exponent += 1
+            if exponent == max_exp:
+                print hex(exponent)
                 mantissa = 0
-                exponent += 1
-        else:
-            if mantissa == 2 ** 52:
-                mantissa = 0
-                exponent += 1
+                break
+
+        return FP(None, self.size, m=mantissa, exp=exponent, sign=self.sign)
 
     def __sub__(self, o):
-        mantissa -= 1
-        if size == 32:
-            if mantissa < 0:
-                mantissa = 2 ** 23 - 1
-                exponent -= 1
-        else:
-            if mantissa < 0:
-                mantissa = 2 ** 52 - 1
-                exponent -= 1
+        mantissa = self.mantissa - o
+        exponent = self.exponent
+        max_mantissa = max_mantissa_32 if self.size == 32 else max_mantissa_64
+        max_exp = max_exp_32 if self.size == 32 else max_exp_64
+        while mantissa < max_mantissa:
+            mantissa += max_mantissa
+            exponent -= 1
+        return FP(None, self.size, m=mantissa, exp=exponent, sign=self.sign)
+
+    def random_move(self):
+        # TODO: How to random move?
+        return self
 
 
 class BV():

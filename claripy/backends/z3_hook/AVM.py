@@ -74,7 +74,7 @@ def doAVM(codes):
                         args_value[k] = pv + delta
                         delta = 2 * delta
                         now = get_fitness(executor, args_value)
-                        print now, args_value
+                        print now, delta, args_value
                         if now is None:
                             return pack_result(args_value, executor)
                         if now <= cur:
