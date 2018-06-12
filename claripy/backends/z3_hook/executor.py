@@ -33,17 +33,52 @@ ffi = FFI()
 
 class FP():
     def __init__(self, val, size):
+        self.val = val
+        self.size = size
+        self.ffikind = ffi.cast('void *', val)
+
         bits = ''.join(bin(ord(c))[2:].rjust(8, '0')
                        for c in struct.pack('!f', val))
-        self.sign = bits[0]
+
+        self.sign = int(bits[0], 2)
         if size == 32:
-            self.exponent = bits[1:9]
-            self.mantissa = bits[9:]
+            self.exponent = int(bits[1:9], 2)
+            self.mantissa = int(bits[9:], 2)
+            self.valid = self.exponent < 2 ** 8 - 1
         elif size == 64:
-            self.exponent = bits[1:11]
-            self.mantissa = bits[11:]
+            self.exponent = int(bits[1:11], 2)
+            self.mantissa = int(bits[11:], 2)
+            self.valid = self.exponent < 2 ** 11 - 1
         else:
             raise ValueError
+
+
+    def __str__(self):
+        return "{:x}(FP{})".format(self.val, self.size)
+
+    def __repr__(self):
+        return "{:x}(FP{})".format(self.val, self.size)
+
+    def __call__(self):
+        return self.val
+
+    def __add__(self, o):
+        return FP(self.val + o, self.size)
+
+    def __sub__(self, o):
+        return FP(self.val - o, self.size)
+
+    def __mul__(self, o):
+        return FP(self.val * o, self.size)
+
+    def __div__(self, o):
+        return FP(self.val / o, self.size)
+
+    def __ne__(self, o):
+        return self.val != o
+
+    def __eq__(self, o):
+        return self.val == o
 
 
 class BV():
