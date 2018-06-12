@@ -46,49 +46,41 @@ def doAVM(codes):
             improvement = 0
             while idx < arglen:
                 cur = get_fitness(executor, args_value)
+                st = cur
                 if cur is None:
                     return pack_result(args_value, executor)
                 k = args_value.keys()[idx]
-                # Pattern Move
-                while True:
-                    if args_value[k] != 0:
-                        args_value[k] *= 2
-                    else:
-                        args_value[k] += 1
-                    now = get_fitness(executor, args_value)
-                    if now is None:
-                        return pack_result(args_value, executor)
-                    if now <= cur:
-                        cur = now
-                    else:
-                        args_value[k] = args_value[k] / 2
-                        break
+
                 # get direction
                 backup = args_value[k]
                 args_value[k] = backup + 1
                 inc = get_fitness(executor, args_value)
                 if inc is None:
                     return pack_result(args_value, executor)
-                direction = inc < cur
+                direction = inc <= cur
                 if not direction:
                     args_value[k] = backup - 1
                     dec = get_fitness(executor, args_value)
                     if dec is None:
                         return pack_result(args_value, executor)
-                    direction = - (dec < cur)
-                # Exploratory Move
-                while direction:
-                    args_value[k] = args_value[k] + direction
-                    now = get_fitness(executor, args_value)
-                    if now is None:
-                        return pack_result(args_value, executor)
+                    direction = - (dec <= cur)
 
-                    if now <= cur:
-                        cur = now
-                    else:
-                        if now < cur:
-                            improvement = improvement + 1
-                        break
+                # Pattern Move
+                if direction:
+                    delta = 2 * direction
+                    while True:
+                        pv = args_value[k]
+                        args_value[k] = pv + delta
+                        delta = 2 * delta
+                        now = get_fitness(executor, args_value)
+                        if now is None:
+                            return pack_result(args_value, executor)
+                        if now <= cur:
+                            cur = now
+                        else:
+                            improvement += st > cur
+                            args_value[k] = pv
+                            break
                 idx += 1
             if improvement == 0:
                 break

@@ -33,11 +33,12 @@ ffi = FFI()
 
 class BV():
     def __init__(self, val, size):
+        mask = (1L << size) - 1
         self.val = val
         self.size = size
         self.ffikind = ffi.cast('void *', val)
         # FIXME: optimize
-        self.valid = 0 <= self.val <= (1L << self.size) - 1
+        self.valid = 0 <= self.val <= mask
 
     def __str__(self):
         return "{}(BV{})".format(self.val, self.size)
@@ -85,6 +86,7 @@ class Executor():
         with tempfile.NamedTemporaryFile(delete=False, suffix=".c") as f:
             name = f.name[:-2]
             f.write(r'''#include <stdint.h>
+            #include <math.h>
         #define abs(x) ((x) > 0 ? (x) : -(x))
         #define extract(value, start, length) \
             (((value) >> (start)) & (~0ULL >> (sizeof(value) * 8) - (length)))
@@ -133,7 +135,7 @@ class Executor():
 
     def __call__(self, _id, args):
         fun = getattr(self.dll, 'fitness_{}'.format(_id))
-        arg = ffi.new('void **')
+        arg = ffi.new('void *[%d]' % len(args))
         for i, val in enumerate(args):
             arg[i] = val.ffikind
         return fun(arg)
