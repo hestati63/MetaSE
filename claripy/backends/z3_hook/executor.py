@@ -127,8 +127,10 @@ class Executor():
         return funcs, defs, fvs, name
 
     def __compile(self, name):
+        '''
         with open(name + '.c') as f: print f.read()
         raw_input()
+        '''
         subprocess.check_call(['gcc', '-O3', '-c', '-Wno-pointer-to-int-cast',
                               '-w', '-fpic', name + '.c', '-o', name + '.o'])
         subprocess.check_call(['gcc', '-shared', '-o',

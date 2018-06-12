@@ -12,7 +12,7 @@ def get_fitness(executor, args):
             res = []
             for i in funcs:
                 uuid, fv, sat = i
-                cargs = [args[name] for _, name in fv]
+                cargs = [args[name] for _, name, _ in fv]
                 fitness = executor(uuid, cargs)
                 if not sat(fitness):
                     res.append(fitness)
@@ -23,7 +23,7 @@ def get_fitness(executor, args):
                 return bd, min(res)
         else:
             uuid, fv, sat = funcs
-            cargs = [args[name] for _, name in fv]
+            cargs = [args[name] for _, name, _ in fv]
             fitness = executor(uuid, cargs)
             if not sat(fitness):
                 return bd, fitness
@@ -39,7 +39,7 @@ def doAVM(codes):
 
     # initialize all argument to zero
     args_value = {name: FP(0, size) if isfp else BV(0, size)
-                        for name, (size, isfp) in executor.fvs.items()}
+                  for name, (size, isfp) in executor.fvs.items()}
     arglen = len(args_value)
     for _ in range(100):
         while True:

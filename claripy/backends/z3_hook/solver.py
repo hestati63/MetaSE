@@ -38,6 +38,8 @@ class Solver(z3.Solver):
                     print z3.Solver.model(self)
                     print 'wrong result'
                     raw_input()
+                else:
+                    print 'not wrong'
                 return r
             else:
                 return z3.sat
@@ -48,7 +50,7 @@ class Solver(z3.Solver):
         if self.fpKind:
             s = z3.Solver()
             for key, value in self.answer.items():
-                s.add(z3.BitVec(key[0], key[1]) == value.val)
+                s.add(z3.BitVec(key[0], key[1][0]) == value.val)
             assert (s.check() == z3.sat)
             return s.model()
         else:
