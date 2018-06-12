@@ -266,12 +266,10 @@ class CompileService(object):
         elif ast.op == 'BVV':
             _id = self.getFreeId()
             val, size = ast.args
-            if size == 32:
+            if size <= 32:
                 precond = 'uint32_t {id} = {val};\n'.format(id=_id, val=val)
-            elif size == 64:
-                precond = 'uint64_t {id} = {val};\n'.format(id=_id, val=val)
             else:
-                raise ValueError(size)
+                precond = 'uint64_t {id} = {val};\n'.format(id=_id, val=val)
             return set(), precond, _id
         elif ast.op == 'Concat':
             res = [(self._compile(at), at.size()) for at in ast.args]
@@ -316,9 +314,9 @@ class CompileService(object):
             fv, precond, expr = self._compile(op)
             precond += genBvPrecond([ID], [op], [expr])
             if size == 32:
-                code = 'truncf({id})'.format(id=ID)
+                code = '(int32_t)truncf({id})'.format(id=ID)
             elif size == 64:
-                code = 'trunc({id})'.format(id=ID)
+                code = '(int64_t)trunc({id})'.format(id=ID)
             else:
                 raise ValueError(size)
             return fv, precond, code
@@ -329,9 +327,9 @@ class CompileService(object):
             fv, precond, expr = self._compile(op)
             precond += genBvPrecond([ID], [op], [expr])
             if size == 32:
-                code = 'truncf({id})'.format(id=ID)
+                code = '(uint32_t)truncf({id})'.format(id=ID)
             elif size == 64:
-                code = 'trunc({id})'.format(id=ID)
+                code = '(uint64_t)trunc({id})'.format(id=ID)
             else:
                 raise ValueError(size)
             return fv, precond, code

@@ -84,11 +84,12 @@ class Executor():
         fv_set = set()
         with tempfile.NamedTemporaryFile(delete=False, suffix=".c") as f:
             name = f.name[:-2]
-            f.write(r'''#include <stdint.h>
-        #define abs(x) ((x) > 0 ? (x) : -(x))
-        #define extract(value, start, length) \
-            (((value) >> (start)) & (~0ULL >> (sizeof(value) * 8) - (length)))
-            ''')
+            f.write(r'''#include <math.h>
+#include <stdint.h>
+#define abs(x) ((x) > 0 ? (x) : -(x))
+#define extract(value, start, length) \
+(((value) >> (start)) & (~0ULL >> (sizeof(value) * 8) - (length)))
+''')
 
             for idx, code in enumerate(codes):
                 bd = len(codes) - idx - 1
