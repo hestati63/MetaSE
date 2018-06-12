@@ -242,12 +242,26 @@ class CompileService(object):
             precond += genBvPrecond(ID, ast.args, expr)
             code = '(' + ')+('.join(ID) + ')'
             return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__sub__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')-('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
         elif ast.op == '__mul__':
             ID = [self.getFreeId() for _ in ast.args]
             fv, pr, expr = zip(*map(self._compile, ast.args))
             precond = ''.join(pr)
             precond += genBvPrecond(ID, ast.args, expr)
             code = '(' + ')*('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__div__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')/('.join(ID) + ')'
             return reduce(set.__or__, fv), precond, code
         elif ast.op == 'BVV':
             _id = self.getFreeId()
@@ -256,6 +270,8 @@ class CompileService(object):
                 precond = 'uint32_t {id} = {val};\n'.format(id=_id, val=val)
             elif size == 64:
                 precond = 'uint64_t {id} = {val};\n'.format(id=_id, val=val)
+            else:
+                raise ValueError(size)
             return set(), precond, _id
         elif ast.op == 'Concat':
             res = [(self._compile(at), at.size()) for at in ast.args]
@@ -285,13 +301,40 @@ class CompileService(object):
             name = ast.args[0]
             return set([(size, name)]), '', name
         elif ast.op == '__invert__':
-            pass
+            op, = ast.args
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genBvPrecond([ID], [op], [expr])
+            code = '~({id})'.format(id=ID)
+            return fv, precond, code
         elif ast.op == 'fpToIEEEBV':
             pass
         elif ast.op == 'fpToSBV':
-            pass
+            mode, op, size = ast.args
+            assert mode == 'RTZ'
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genBvPrecond([ID], [op], [expr])
+            if size == 32:
+                code = 'truncf({id})'.format(id=ID)
+            elif size == 64:
+                code = 'trunc({id})'.format(id=ID)
+            else:
+                raise ValueError(size)
+            return fv, precond, code
         elif ast.op == 'fpToUBV':
-            pass
+            mode, op, size = ast.args
+            assert mode == 'RTZ'
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genBvPrecond([ID], [op], [expr])
+            if size == 32:
+                code = 'truncf({id})'.format(id=ID)
+            elif size == 64:
+                code = 'trunc({id})'.format(id=ID)
+            else:
+                raise ValueError(size)
+            return fv, precond, code
         else:
             raise NotImplementedError('Unhandled BV %s %s' % (ast.op, ast))
 
