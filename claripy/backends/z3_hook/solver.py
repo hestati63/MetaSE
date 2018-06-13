@@ -14,7 +14,7 @@ class Solver(z3.Solver):
     def __init__(self, *args, **kwargs):
         backendobj = kwargs.pop('backendobj')
         z3.Solver.__init__(self, *args, **kwargs)
-        self.fpKind = False           # Whether this solver hold fp
+        self.fpKind = True # Whether this solver hold fp
         self.backendobj = backendobj  # backend object to call _abstract
         self.push_rec = []            # push record
         self.compiler = Compiler()
@@ -30,20 +30,15 @@ class Solver(z3.Solver):
     def check(self):
         if self.fpKind:
             self.answer = self.__search()
-            return z3.sat if self.answer else z3.unsat
-            #if self.answer is None:
-            #    r = z3.Solver.check(self)
-            #    self.fpKind = False
-            #    if r == z3.sat:
-            #        print self.assertions()
-            #        print z3.Solver.model(self)
-            #        print 'wrong result'
-            #        raw_input()
-            #    else:
-            #        print 'not wrong'
-            #    return r
-            #else:
-            #    return z3.sat
+            #return z3.sat if self.answer else z3.unsat
+            if self.answer is None:
+                # XXX: incase  of flat-landscape function,
+                # XXX: the avm will exit fastly, and then query it to z3.
+                r = z3.Solver.check(self)
+                self.fpKind = False
+                return r
+            else:
+                return z3.sat
 
         else:
             return z3.Solver.check(self)

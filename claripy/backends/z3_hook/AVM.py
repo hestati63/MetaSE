@@ -58,13 +58,13 @@ def doAVM(codes):
                 inc = get_fitness(executor, args_value)
                 if inc is None:
                     return pack_result(args_value, executor)
-                direction = inc <= cur
+                direction = inc < cur
                 if not direction:
                     args_value[k] = backup - 1
                     dec = get_fitness(executor, args_value)
                     if dec is None:
                         return pack_result(args_value, executor)
-                    direction = - (dec <= cur)
+                    direction = - (dec < cur)
 
                 # Pattern Move
                 if direction:

@@ -219,7 +219,5 @@ class Executor():
         arg = ffi.new('void *[%d]' % len(args))
         for i, val in enumerate(args):
             arg[i] = val.ffikind
-        print args
         f = fun(arg)
-        print f
         return f
