@@ -44,6 +44,7 @@ class Solver(z3.Solver):
             #    return r
             #else:
             #    return z3.sat
+
         else:
             return z3.Solver.check(self)
 
