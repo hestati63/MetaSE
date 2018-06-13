@@ -1,5 +1,6 @@
 CC     = gcc
-TESTS := $(patsubst %.c,%,$(wildcard *.c))
+CPP    = g++
+TESTS := $(patsubst %.c,%,$(wildcard *.c)) $(patsubst %.cpp,%,$(wildcard *.cpp))
 
 all: $(TESTS)
 
@@ -8,3 +9,6 @@ clean:
 
 % : %.c
 	$(CC) -o $@ $< -lm
+
+% : %.cpp
+	$(CPP) -o $@ $< -lQuantLib
