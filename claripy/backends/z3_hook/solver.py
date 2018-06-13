@@ -60,7 +60,8 @@ class Solver(z3.Solver):
 
     def __simplify(self, expr):
         if isinstance(expr, z3.BoolRef):
-            s = z3.simplify(expr)
+            #s = z3.simplify(expr)
+            s = self.backendobj._search_simplify_tactics(expr).as_expr()
         return self.backendobj._abstract(s)
 
     def __search(self):
