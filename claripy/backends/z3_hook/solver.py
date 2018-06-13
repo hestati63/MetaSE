@@ -58,11 +58,15 @@ class Solver(z3.Solver):
         else:
             return z3.Solver.model(self)
 
+    def __simplify(self, expr):
+        if isinstance(expr, z3.BoolRef):
+            s = z3.simplify(expr)
+        return self.backendobj._abstract(s)
+
     def __search(self):
         codes = []
         for expr in self.assertions():
-            codes.extend(list(self.compiler.compile(
-                self.backendobj.simplify(self.backendobj._abstract(expr)))))
+            codes.extend(list(self.compiler.compile(self.__simplify(expr))))
         return doAVM(codes)
 
     def add(self, *x):

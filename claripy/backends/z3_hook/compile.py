@@ -620,13 +620,15 @@ class Compiler(object):
     cache = dict()
 
     def compile(self, ast):
+        rs =[]
         stmts = self.__try_divide(ast)
         stmts = stmts if isinstance(stmts, list) else [stmts]
         for stmt in stmts:
             _hash = stmt._hash
             r = self.cache.get(_hash, False) or CompileService(stmt).compile()
             self.cache[_hash] = r
-            yield r
+            rs.append(r)
+        return rs
 
     def __try_divide(self, ast):
         assert isinstance(ast, Bool)
