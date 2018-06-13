@@ -213,6 +213,33 @@ void testFirefly() {
     test(fa, f, ec, x, constraint, optimum);
     std::cout << "================================================================" << std::endl;
 }
+
+void testFirefly(char arg1) {
+    /*
+    The Eggholder function is only in 2 dimensions, it has a multitude
+    * of local minima, and they are not symmetric necessarily
+    */
+    Size n = 2;
+    NonhomogeneousBoundaryConstraint constraint(Array(n, -512.0), Array(n, 512.0));
+    Array x(n, 0.0);
+    Array optimum(n);
+    optimum[0] = 512.0;
+    optimum[1] = 404.2319;
+    Size agents = arg1;
+    Real vola = 1.5;
+    Real intense = 1.0;
+    boost::shared_ptr<FireflyAlgorithm::Intensity> intensity =
+        boost::make_shared<ExponentialIntensity>(10.0, 1e-8, intense);
+    boost::shared_ptr<FireflyAlgorithm::RandomWalk> randomWalk =
+        boost::make_shared<LevyFlightWalk>(vola, 0.5, 1.0, seed);
+    std::cout << "Function eggholder, Agents: " << agents
+            << ", Vola: " << vola << ", Intensity: " << intense << std::endl;
+    TestFunction f(eggholder);
+    FireflyAlgorithm fa(agents, intensity, randomWalk, 40);
+    EndCriteria ec(5000, 1000, 1.0e-8, 1.0e-8, 1.0e-8);
+    test(fa, f, ec, x, constraint, optimum);
+    std::cout << "================================================================" << std::endl;
+}
 #endif
 
 void testSimulatedAnnealing(Size dimension, Size maxSteps, Size staticSteps){
