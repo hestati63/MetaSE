@@ -30,19 +30,20 @@ class Solver(z3.Solver):
     def check(self):
         if self.fpKind:
             self.answer = self.__search()
-            if self.answer is None:
-                r = z3.Solver.check(self)
-                self.fpKind = False
-                if r == z3.sat:
-                    print self.assertions()
-                    print z3.Solver.model(self)
-                    print 'wrong result'
-                    raw_input()
-                else:
-                    print 'not wrong'
-                return r
-            else:
-                return z3.sat
+            return z3.sat if self.answer else z3.unsat
+            #if self.answer is None:
+            #    r = z3.Solver.check(self)
+            #    self.fpKind = False
+            #    if r == z3.sat:
+            #        print self.assertions()
+            #        print z3.Solver.model(self)
+            #        print 'wrong result'
+            #        raw_input()
+            #    else:
+            #        print 'not wrong'
+            #    return r
+            #else:
+            #    return z3.sat
         else:
             return z3.Solver.check(self)
 
