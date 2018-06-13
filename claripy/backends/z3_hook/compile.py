@@ -16,7 +16,15 @@ relops = sum([relops_eq, relops_ne, relops_ge, relops_le, relops_gt, relops_lt],
 
 
 def sort2type(sort):
-    return sort.name.lower()
+    global size
+    name = sort.name.lower()
+    if name == 'float':
+        size = 32
+    elif name == 'double':
+        size = 64
+    else:
+        raise ValueError
+    return name
 
 
 def size2type(size):
@@ -163,6 +171,7 @@ class CompileService(object):
         return func(ast)
 
     def handle_FP(self, ast):
+        global size
         if ast.op == 'fpToFP':
             if len(ast.args) == 3:
                 mode, expr, _type = ast.args
@@ -243,6 +252,13 @@ class CompileService(object):
             precond += genFpPrecond([ID], [op], [expr])
             expr = '-({id})'.format(id=ID)
             return fv, precond, expr
+        elif ast.op == 'fpAbs':
+            op, = ast.args
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genFpPrecond([ID], [op], [expr])
+            expr = 'abs' + ' f'[size == 32] + '({id})'.format(id=ID)
+            return fv, precond, expr
         elif ast.op == 'FPV':
             _id = self.getFreeId()
             precond = '{type} {id} = {val};\n'.format(type=sort2type(ast.sort),
@@ -253,7 +269,137 @@ class CompileService(object):
                                       % (ast.sort, ast.op, ast.args))
 
     def handle_BV(self, ast):
-        if ast.op == '__add__':
+        global size
+        if ast.op == 'SGE':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')>=('.join('(int' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'SLE':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')<=('.join('(int' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'SGT':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')>('.join('(int' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'SLT':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')<('.join('(int' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'UGE':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')>=('.join('(uint' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'ULE':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')<=('.join('(uint' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'UGT':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')>('.join('(uint' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'ULT':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')<('.join('(uint' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'And':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')&('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'Or':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')|('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'Not':
+            assert len(ast.args) == 1
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '~({id})'.format(ID[0])
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'Concat':
+            res = [(self._compile(at), at.size()) for at in ast.args]
+            fvs = set()
+            precond = ''
+            exprs = []
+            for (fv, pr, expr), sz in res:
+                fvs |= fv
+                precond += pr
+                exprs.append((expr, sz))
+            exprs.reverse()
+            now = 0
+            codes = []
+            for expr, sz in exprs:
+                codes.append('(({expr} & {size}) * {now})'.
+                             format(expr=expr, size=(1 << sz) - 1,
+                                    now=2 ** now))
+                now += sz
+            return fvs, precond, '|'.join(codes)
+        elif ast.op == 'Extract':
+            st, ed, expr = ast.args
+            fv, pr, expr = self._compile(expr)
+            code = 'extract({exp}, {st}, {ed})'.format(exp=expr, st=st, ed=ed)
+            return fv, pr, code
+        elif ast.op == 'BVV':
+            _id = self.getFreeId()
+            val, size = ast.args
+            if size <= 32:
+                precond = 'uint32_t {id} = {val}U;\n'.format(id=_id, val=val)
+            else:
+                precond = 'uint64_t {id} = {val}UL;\n'.format(id=_id, val=val)
+            return set(), precond, _id
+        elif ast.op == 'BoolS':
+            pass
+        elif ast.op == 'BVS':
+            size = ast.size()
+            name = ast.args[0]
+            return set([(size, name, False)]), '', name
+        elif ast.op == 'SDiv':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')/('.join('(int' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'SMod':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')%('.join('(int' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__add__':
             ID = [self.getFreeId() for _ in ast.args]
             fv, pr, expr = zip(*map(self._compile, ast.args))
             precond = ''.join(pr)
@@ -281,41 +427,119 @@ class CompileService(object):
             precond += genBvPrecond(ID, ast.args, expr)
             code = '(' + ')/('.join(ID) + ')'
             return reduce(set.__or__, fv), precond, code
-        elif ast.op == 'BVV':
-            _id = self.getFreeId()
-            val, size = ast.args
-            if size <= 32:
-                precond = 'uint32_t {id} = {val}U;\n'.format(id=_id, val=val)
-            else:
-                precond = 'uint64_t {id} = {val}UL;\n'.format(id=_id, val=val)
-            return set(), precond, _id
-        elif ast.op == 'Concat':
-            res = [(self._compile(at), at.size()) for at in ast.args]
-            fvs = set()
-            precond = ''
-            exprs = []
-            for (fv, pr, expr), sz in res:
-                fvs |= fv
-                precond += pr
-                exprs.append((expr, sz))
-            exprs.reverse()
-            now = 0
-            codes = []
-            for expr, sz in exprs:
-                codes.append('(({expr} & {size}) * {now})'.
-                             format(expr=expr, size=(1 << sz) - 1,
-                                    now=2 ** now))
-                now += sz
-            return fvs, precond, '|'.join(codes)
-        elif ast.op == 'Extract':
-            st, ed, expr = ast.args
-            fv, pr, expr = self._compile(expr)
-            code = 'extract({exp}, {st}, {ed})'.format(exp=expr, st=st, ed=ed)
-            return fv, pr, code
-        elif ast.op == 'BVS':
-            size = ast.size()
-            name = ast.args[0]
-            return set([(size, name, False)]), '', name
+        elif ast.op == '__pow__':
+            assert len(ast.args) == 2
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = 'lround(pow(({id1}), ({id2})))'.format(id1=ID[0], id2=ID[1])
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__mod__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')%('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__neg__':
+            op, = ast.args
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genBvPrecond([ID], [op], [expr])
+            code = '-({id})'.format(id=ID)
+            return fv, precond, code
+        elif ast.op == '__pos__':
+            op, = ast.args
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genBvPrecond([ID], [op], [expr])
+            code = '+({id})'.format(id=ID)
+            return fv, precond, code
+        elif ast.op == '__abs__':
+            op, = ast.args
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genBvPrecond([ID], [op], [expr])
+            code = 'lround(abs(({id})))'.format(id=ID)
+            return fv, precond, code
+        elif ast.op == '__and__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')&('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__or__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')|('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__xor__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')^('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__eq__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')==('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__ne__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')!=('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__ge__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')>=('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__le__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')<=('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__gt__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')>('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__lt__':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')<('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__lshift__':    #XXX
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')<<('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == '__rshift__':    #XXX
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')>>('.join(ID) + ')'
+            return reduce(set.__or__, fv), precond, code
         elif ast.op == '__invert__':
             op, = ast.args
             ID = self.getFreeId()
@@ -324,7 +548,13 @@ class CompileService(object):
             code = '~({id})'.format(id=ID)
             return fv, precond, code
         elif ast.op == 'fpToIEEEBV':
-            pass
+            op, = ast.args
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genBvPrecond([ID], [op], [expr])
+            code = '*({type}*)&({id})'.format(type='uint'+str(size)+'_t',
+                                              id=ID)
+            return fv, precond, code
         elif ast.op == 'fpToSBV':
             mode, op, size = ast.args
             assert mode == 'RTZ'
@@ -351,6 +581,33 @@ class CompileService(object):
             else:
                 raise ValueError(size)
             return fv, precond, code
+        elif ast.op == 'SignExt':
+            op, = ast.args
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genBvPrecond([ID], [op], [expr])
+            code = '(int{size}_t)({id})'.format(id=ID, size=size)   #XXX
+            return fv, precond, code
+        elif ast.op == 'ZeroExt':
+            op, = ast.args
+            ID = self.getFreeId()
+            fv, precond, expr = self._compile(op)
+            precond += genBvPrecond([ID], [op], [expr])
+            code = '(uint{size}_t)({id})'.format(id=ID, size=size)  #XXX
+            return fv, precond, code
+        elif ast.op == 'LShR':
+            ID = [self.getFreeId() for _ in ast.args]
+            fv, pr, expr = zip(*map(self._compile, ast.args))
+            precond = ''.join(pr)
+            precond += genBvPrecond(ID, ast.args, expr)
+            code = '(' + ')>>('.join('(uint' + str(size) + '_t)' + ID) + ')'
+            return reduce(set.__or__, fv), precond, code
+        elif ast.op == 'RotateLeft':
+            pass
+        elif ast.op == 'RotateRight':
+            pass
+        elif ast.op == 'Reverse':
+            pass
         else:
             raise NotImplementedError('Unhandled BV %s %s' % (ast.op, ast))
 
