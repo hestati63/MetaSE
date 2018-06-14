@@ -28,13 +28,13 @@ def sort2type(sort):
 
 
 def size2type(size):
-    if size == 8:
+    if size <= 8:
         return 'uint8_t'
-    elif size == 16:
+    elif size <= 16:
         return 'uint16_t'
-    elif size == 32:
+    elif size <= 32:
         return 'uint32_t'
-    elif size == 64:
+    elif size <= 64:
         return 'uint64_t'
     else:
         raise ValueError("Unknown size: %d" % size)
