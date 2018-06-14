@@ -172,8 +172,8 @@ class Executor():
             for idx, code in enumerate(codes):
                 bd = len(codes) - idx - 1
                 if isinstance(code, list):
-                    ors = []
-                    for c in code:
+                    ors = [code[0]]
+                    for c in code[1:]:
                         op, fv, code, uuid, tp = c
                         ors.append((uuid, fv, get_checker_by_sat(op)))
                         if uuid not in builded:

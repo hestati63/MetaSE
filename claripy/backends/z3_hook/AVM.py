@@ -10,7 +10,7 @@ def get_fitness(executor, args):
     for bd, funcs in executor.funcs:
         if isinstance(funcs, list):
             res = []
-            for i in funcs:
+            for i in funcs[1:]:
                 uuid, fv, sat = i
                 cargs = [args[name] for _, name, _ in fv]
                 fitness = executor(uuid, cargs)
@@ -20,7 +20,10 @@ def get_fitness(executor, args):
                     res = None
                     break
             if res:
-                return bd, min(res)
+                if funcs[0] == 'Or':
+                    return bd, min(res)
+                else:
+                    return bd, max(res)
         else:
             uuid, fv, sat = funcs
             cargs = [args[name] for _, name, _ in fv]

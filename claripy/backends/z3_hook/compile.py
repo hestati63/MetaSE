@@ -124,15 +124,8 @@ class CompileService(object):
     def handle_Top_Bool(self, ast, negate=False):
         if ast.op == 'Not':
             return self.handle_Top_Bool(ast.args[0], negate=not negate)
-        elif ast.op == 'Or':
-            res = []
-            for _ast in ast.args:
-                r = self.handle_Top_Bool(_ast)
-                if isinstance(r, list):
-                    res.extend(r)
-                else:
-                    res.append(r)
-            return res
+        elif ast.op == 'Or' or ast.op == 'And':
+            return self.handle_Bool(ast, negate=negate)
         elif ast.op in relops:
             op = normalize_op(ast.op, negate=negate)
             args = ast.args
@@ -613,6 +606,30 @@ class CompileService(object):
     def handle_Bool(self, ast, negate=False):
         if ast.op == 'Not':
             return self.handle_Bool(ast.args[0], negate=not negate)
+        elif ast.op == 'Or':
+            res = ['Or']
+            for _ast in ast.args:
+                r = self.handle_Top_Bool(_ast)
+                if isinstance(r, list):
+                    if r[0] == 'Or':
+                        res.extend(r[1:])
+                    else:
+                        res.append(r)
+                else:
+                    res.append(r)
+            return res
+        elif ast.op == 'And':
+            res = ['And']
+            for _ast in ast.args:
+                r = self.handle_Top_Bool(_ast)
+                if isinstance(r, list):
+                    if r[0] == 'And':
+                        res.extend(r[1:])
+                    else:
+                        res.append(r)
+                else:
+                    res.append(r)
+            return res
 
 
 class Compiler(object):
