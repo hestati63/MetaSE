@@ -30,7 +30,6 @@ class Solver(z3.Solver):
     def check(self):
         if self.fpKind:
             self.answer = self.__search()
-            #return z3.sat if self.answer else z3.unsat
             if self.answer is None:
                 # XXX: incase  of flat-landscape function,
                 # XXX: the avm will exit fastly, and then query it to z3.

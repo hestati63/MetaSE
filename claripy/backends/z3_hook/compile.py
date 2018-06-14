@@ -357,7 +357,6 @@ class CompileService(object):
                 fvs |= fv
                 precond += pr
                 exprs.append((expr, sz))
-            exprs.reverse()
             now = 0
             codes = []
             for expr, sz in exprs:

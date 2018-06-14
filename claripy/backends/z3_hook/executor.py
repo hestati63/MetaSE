@@ -1,4 +1,5 @@
 import os
+import random
 import tempfile
 import subprocess
 import struct
@@ -85,7 +86,6 @@ class FP():
             mantissa -= max_mantissa
             exponent += 1
             if exponent == max_exp:
-                print hex(exponent)
                 mantissa = 0
                 break
 
@@ -108,12 +108,12 @@ class FP():
 
 class BV():
     def __init__(self, val, size):
-        mask = (1L << size) - 1
+        self.mask = (1L << size) - 1
         self.val = val
         self.size = size
         self.ffikind = ffi.cast('void *', val)
         # FIXME: optimize
-        self.valid = 0 <= self.val <= mask
+        self.valid = 0 <= self.val <= self.mask
 
     def __str__(self):
         return "{:x}(BV{})".format(self.val, self.size)
@@ -144,7 +144,7 @@ class BV():
 
     def random_move(self):
         # TODO: How to random move?
-        return self
+        return BV(random.randint(0, self.mask), self.size)
 
 
 class Executor():
@@ -163,8 +163,8 @@ class Executor():
             f.write(r'''#include <math.h>
 #include <stdint.h>
 #define abs(x) ((x) > 0 ? (x) : -(x))
-#define extract(value, start, length) \
-(((value) >> (start)) & (~0ULL >> (sizeof(value) * 8) - (length)))
+#define extract(value, start, end) \
+        (((value) >> (end)) & ((1UL << (start - end)) - 1))
 #define inf INFINITY
 #define nan NAN
 ''')
